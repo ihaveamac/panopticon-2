@@ -1,0 +1,12 @@
+[main]
+
+; token for the account
+token = bot-token
+
+; max messages to keep in cache, to watch for edits and deletions
+max_messages = 7500
+
+[database]
+
+; https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING
+dsn = dbname=panopticon user=panopticon password=nocitponap host=localhost port=5432
