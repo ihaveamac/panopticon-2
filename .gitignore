@@ -194,3 +194,4 @@ Temporary Items
 .apdisk
 
 venv*/
+console*.sql

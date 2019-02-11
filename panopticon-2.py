@@ -63,6 +63,7 @@ def get_rich_embed(message: discord.Message):
 
 class Panopticon(discord.Client):
     pool: aiopg.Pool
+    connected = False
 
     async def start_bot(self, token, dsn, *a, **k):
         print('Connecting to database...')
@@ -129,10 +130,12 @@ class Panopticon(discord.Client):
         await cur.execute(deletion_query, (message.id,))
 
     async def on_ready(self):
-        print('Ready!')
-        async with self.pool.acquire() as conn:
-            async with conn.cursor() as cur:
-                await self.db_add_user(self.user, cur)
+        if not self.connected:
+            print('Ready!')
+            async with self.pool.acquire() as conn:  # type: aiopg.Connection
+                async with conn.cursor() as cur:  # type: aiopg.Cursor
+                    await self.db_add_user(self.user, cur)
+            self.connected = True
 
     async def on_message(self, message: discord.Message):
         if isinstance(message.channel, (discord.TextChannel, discord.DMChannel)):
