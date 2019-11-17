@@ -161,15 +161,14 @@ class Panopticon(discord.Client):
                         pass
 
 
-p = Panopticon()
-
 config = ConfigParser()
 config.read('config.ini')
 
+p = Panopticon(max_messages=config.getint('main', 'max_messages'))
+
 loop = asyncio.get_event_loop()
 try:
-    loop.run_until_complete(p.start_bot(config['main']['token'], config['database']['dsn'],
-                                        max_messages=config.getint('main', 'max_messages')))
+    loop.run_until_complete(p.start_bot(config['main']['token'], config['database']['dsn']))
 except KeyboardInterrupt:
     loop.run_until_complete(p.logout())
 finally:
