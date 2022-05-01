@@ -11,7 +11,7 @@ import json
 from configparser import ConfigParser
 from datetime import datetime
 
-import discord
+import disnake
 import aiopg
 import psycopg2
 
@@ -50,9 +50,9 @@ private_deletion_query = '''INSERT INTO private_deletions VALUES (%s)'''
 guild_deletion_query = '''INSERT INTO guild_deletions VALUES (%s)'''
 
 
-def get_rich_embed(message: discord.Message):
+def get_rich_embed(message: disnake.Message):
     if message.embeds:
-        for e in message.embeds:  # type: discord.Embed
+        for e in message.embeds:  # type: disnake.Embed
             if e.type == 'rich':
                 return json.dumps(e.to_dict())
         else:
@@ -61,7 +61,7 @@ def get_rich_embed(message: discord.Message):
         return None
 
 
-class Panopticon(discord.Client):
+class Panopticon(disnake.Client):
     pool: aiopg.Pool
     connected = False
 
@@ -75,23 +75,23 @@ class Panopticon(discord.Client):
         self.pool.close()
         await self.pool.wait_closed()
 
-    async def db_add_user(self, user: discord.User, cur: aiopg.Cursor):
+    async def db_add_user(self, user: disnake.User, cur: aiopg.Cursor):
         await cur.execute(user_query, (user.id, user.created_at, user.name, user.discriminator, user.bot))
 
-    async def db_add_guild(self, guild: discord.Guild, cur: aiopg.Cursor):
+    async def db_add_guild(self, guild: disnake.Guild, cur: aiopg.Cursor):
         await cur.execute(guild_query, (guild.id, guild.name))
 
-    async def db_add_private_channel(self, channel: discord.DMChannel, cur: aiopg.Cursor):
+    async def db_add_private_channel(self, channel: disnake.DMChannel, cur: aiopg.Cursor):
         ids = sorted((channel.recipient.id, self.user.id))
         await cur.execute(private_channel_query, (channel.id, *ids))
 
-    async def db_add_guild_channel(self, channel: discord.TextChannel, cur: aiopg.Cursor):
+    async def db_add_guild_channel(self, channel: disnake.TextChannel, cur: aiopg.Cursor):
         await self.db_add_guild(channel.guild, cur)
         await cur.execute(guild_channel_query, (channel.id, channel.guild.id, channel.name))
 
-    async def db_add_message(self, message: discord.Message, cur: aiopg.Cursor):
+    async def db_add_message(self, message: disnake.Message, cur: aiopg.Cursor):
         embed = get_rich_embed(message)
-        is_private = isinstance(message.channel, discord.DMChannel)
+        is_private = isinstance(message.channel, disnake.DMChannel)
         if is_private:
             message_query = private_message_query
             attachment_query = private_attachment_query
@@ -104,12 +104,12 @@ class Panopticon(discord.Client):
             await self.db_add_guild_channel(message.channel, cur)
         await cur.execute(message_query, (message.id, message.created_at, message.channel.id, message.author.id,
                                           message.content, embed))
-        for a in message.attachments:  # type: discord.Attachment
+        for a in message.attachments:  # type: disnake.Attachment
             await cur.execute(attachment_query, (a.id, message.id, a.size, a.filename, a.url))
 
-    async def db_add_edit(self, message: discord.Message, cur: aiopg.Cursor):
+    async def db_add_edit(self, message: disnake.Message, cur: aiopg.Cursor):
         embed = get_rich_embed(message)
-        is_private = isinstance(message.channel, discord.DMChannel)
+        is_private = isinstance(message.channel, disnake.DMChannel)
         if is_private:
             edit_query = private_edit_query
         else:
@@ -121,8 +121,8 @@ class Panopticon(discord.Client):
             edited_at = datetime.utcnow()
         await cur.execute(edit_query, (message.id, edited_at, message.content, embed))
 
-    async def db_add_deletion(self, message: discord.Message, cur: aiopg.Cursor):
-        is_private = isinstance(message.channel, discord.DMChannel)
+    async def db_add_deletion(self, message: disnake.Message, cur: aiopg.Cursor):
+        is_private = isinstance(message.channel, disnake.DMChannel)
         if is_private:
             deletion_query = private_deletion_query
         else:
@@ -137,21 +137,21 @@ class Panopticon(discord.Client):
                     await self.db_add_user(self.user, cur)
             self.connected = True
 
-    async def on_message(self, message: discord.Message):
-        if isinstance(message.channel, (discord.TextChannel, discord.DMChannel)):
+    async def on_message(self, message: disnake.Message):
+        if isinstance(message.channel, (disnake.TextChannel, disnake.DMChannel)):
             async with self.pool.acquire() as conn:  # type: aiopg.Connection
                 async with conn.cursor() as cur:  # type: aiopg.Cursor
                     await self.db_add_message(message, cur)
 
-    async def on_message_edit(self, before: discord.Message, after: discord.Message):
-        if isinstance(after.channel, (discord.TextChannel, discord.DMChannel)):
+    async def on_message_edit(self, before: disnake.Message, after: disnake.Message):
+        if isinstance(after.channel, (disnake.TextChannel, disnake.DMChannel)):
             if before.content != after.content or get_rich_embed(before) != get_rich_embed(after):
                 async with self.pool.acquire() as conn:  # type: aiopg.Connection
                     async with conn.cursor() as cur:  # type: aiopg.Cursor
                         await self.db_add_edit(after, cur)
 
-    async def on_message_delete(self, message: discord.Message):
-        if isinstance(message.channel, (discord.TextChannel, discord.DMChannel)):
+    async def on_message_delete(self, message: disnake.Message):
+        if isinstance(message.channel, (disnake.TextChannel, disnake.DMChannel)):
             async with self.pool.acquire() as conn:  # type: aiopg.Connection
                 async with conn.cursor() as cur:  # type: aiopg.Cursor
                     try:

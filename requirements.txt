@@ -1,2 +1,2 @@
-discord>=1.0.0
-aiopg
+disnake>=2.4
+aiopg==1.1.0
