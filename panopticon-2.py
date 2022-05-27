@@ -93,6 +93,8 @@ class Panopticon(disnake.Client):
         embed = get_rich_embed(message)
         is_private = isinstance(message.channel, disnake.DMChannel)
         if is_private:
+            if message.channel.recipient is None:
+                return
             message_query = private_message_query
             attachment_query = private_attachment_query
             await self.db_add_user(message.channel.recipient, cur)
