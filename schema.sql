@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS guild_attachments, private_attachments, guild_edits, privat
 CREATE TABLE users
 (
   user_id       BIGINT PRIMARY KEY,
-  created_at    TIMESTAMP                NOT NULL,
+  created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
   name          TEXT                     NOT NULL,
   discriminator VARCHAR(4)               NOT NULL,
   is_bot        BOOLEAN                  NOT NULL,

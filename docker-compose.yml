@@ -1,0 +1,23 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:14
+    volumes:
+      - panopticondb:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: panopticon
+      POSTGRES_PASSWORD: nocitponap
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U panopticon"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  panopticon_2:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  panopticondb:

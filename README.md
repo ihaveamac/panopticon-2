@@ -5,7 +5,7 @@ Logs guilds, channels (DM and guild), users, and messages. Does not log private 
 
 ## Requirements
 * Python 3.6.1 or later
-* disnake >= 2.4 and aiopg
+* disnake >= 2.4 and asynpg
 * PostgreSQL (10 tested)
 
 ## Quick setup
